@@ -1,0 +1,363 @@
+{
+  "provider": "autogen_agentchat.teams.RoundRobinGroupChat",
+  "component_type": "team",
+  "version": 1,
+  "component_version": 1,
+  "description": "An Agentic AI Team to perform RCA.",
+  "label": "RCA Agentic AI Team_17613",
+  "config": {
+    "participants": [
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "Logs Reading Agent - An agent that provides assistance with ability to use tools.",
+        "label": "Logs Reading Agent",
+        "config": {
+          "name": "logs_reading_agent",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for Azure OpenAI hosted models.",
+            "label": "AzureOpenAIChatCompletionClient",
+            "config": {
+              "model": "gpt-4o",
+              "api_key": "AkyvAi0aL0UZqKB7TfhYjIan9VVg5eZd0IzBeZuvXH3kayLmpkjAJQQJ99BGACYeBjFXJ3w3AAABACOGEh4t",
+              "api_type": "azure",
+              "api_version": "2024-12-01-preview",
+              "azure_endpoint": "https://azure-openai-east-us01.openai.azure.com/",
+              "deployment_id": "gpt-4o",
+              "temperature": 0.2,
+              "base_url": "https://azure-openai-east-us01.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview"
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "An agent that provides assistance with ability to use tools.",
+          "system_message": "You are the Logs Reading Agent.\n\nPurpose:\nMonitor Azure Application Insights for the latest log entry using the 'logs_fetching_tool'.\n\nInput:\nThe tool returns the latest log’s name and timestamp (UTC).\n\nInstructions:\n1. Run 'logs_fetching_tool' to get the latest log entry.\n2.  a. Summarize the error in ONE plain‑language sentence.\n     b. Pass this summary forward to the RCA Agent for correlation with other metrics.\n       \nOutput Rules:\n- Do not mention similarity scores in the output.\n- Be concise and factual - no speculation.\n",
+          "model_client_stream": true,
+          "reflect_on_tool_use": true,
+          "tool_call_summary_format": "{result}",
+          "metadata": {},
+          "tools": [
+            {
+              "provider": "autogen_core.tools.FunctionTool",
+              "component_type": "tool",
+              "version": 1,
+              "component_version": 1,
+              "description": "A tool that fetches the latest logs from Azure App Insights.",
+              "label": "Logs Fetching Tool",
+              "config": {
+                "source_code": "def logs_fetching_tool():\n\n    import requests\n    import json\n    import certifi\n    import os\n    from dotenv import load_dotenv\n    load_dotenv()\n\n    # Your Application Insights App ID and API Key\n    appId = os.getenv(\"APPID\")\n    appKey = os.getenv(\"APPKEY\")\n\n    query = \"\"\"\n    customEvents\n    | where timestamp > ago(2400h)\n    | project timestamp, name\n    | order by timestamp desc\n    | limit 1\n    \"\"\"\n\n    # Build request\n    params = {\"query\": query}\n    headers = {\"X-Api-Key\": appKey}\n    url = f\"https://api.applicationinsights.io/v1/apps/{appId}/query\"\n\n    # Make the request (no verify= needed now)\n    response = requests.get(url, headers=headers, params=params, verify=certifi.where())\n\n    # Raise an error if the request failed\n    response.raise_for_status()\n\n    # Parse and print results\n    logs = response.json()\n    column_names = [col[\"name\"] for col in logs[\"tables\"][0][\"columns\"]]\n\n    for row in logs[\"tables\"][0][\"rows\"]:\n        structured = dict(zip(column_names, row))\n        return structured\n      ",
+                "name": "logs_fetching_tool",
+                "description": "A simple calculator that performs basic arithmetic operations",
+                "global_imports": [],
+                "has_cancellation_support": false
+              }
+            }
+          ]
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "App Service Agent - An agent that provides assistance with ability to use tools.",
+        "label": "App Service Agent",
+        "config": {
+          "name": "app_service_agent",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for Azure OpenAI hosted models.",
+            "label": "AzureOpenAIChatCompletionClient",
+            "config": {
+              "model": "gpt-4o",
+              "api_key": "AkyvAi0aL0UZqKB7TfhYjIan9VVg5eZd0IzBeZuvXH3kayLmpkjAJQQJ99BGACYeBjFXJ3w3AAABACOGEh4t",
+              "api_type": "azure",
+              "api_version": "2024-12-01-preview",
+              "azure_endpoint": "https://azure-openai-east-us01.openai.azure.com/",
+              "deployment_id": "gpt-4o",
+              "temperature": 0.2,
+              "base_url": "https://azure-openai-east-us01.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview"
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "An agent that provides assistance with ability to use tools.",
+          "system_message": "You are the App Service Agent.\n\nPurpose:\nCheck the current status of the Azure Web App using the 'service_status_checker' tool.\n\nInstructions:\n1. Run 'service_status_checker' to fetch the latest status of the web app.\n2. Return the status in a short, factual sentence (e.g., \"The Web App 'Server1' is currently Stopped.\").\n3. Pass this status information forward to the RCA Agent for correlation with other metrics.\n\nOutput Rules:\n- Do not speculate or add explanations.\n- Only report the current state as returned by the tool.",
+          "model_client_stream": true,
+          "reflect_on_tool_use": true,
+          "tool_call_summary_format": "{result}",
+          "metadata": {},
+          "tools": [
+            {
+              "provider": "autogen_core.tools.FunctionTool",
+              "component_type": "tool",
+              "version": 1,
+              "component_version": 1,
+              "description": "A tool to check the latest service status of the web app.",
+              "label": "Service Status Checker",
+              "config": {
+                "source_code": "def service_status_checker():\n    from azure.identity import ClientSecretCredential\n    from azure.mgmt.web import WebSiteManagementClient\n    import time\n    import os\n    from dotenv import load_dotenv\n\n    load_dotenv()\n    poll_interval=5\n    timeout=120\n\n    # Load values from .env\n    subscription_id = os.getenv(\"SUBSCRIPTION_ID\")\n    resource_group = os.getenv(\"RESOURCE_GROUP\")\n    webapp_name = os.getenv(\"WEBAPP_NAME\")\n    tenant_id = os.getenv(\"TENANT_ID\")              \n    client_id = os.getenv(\"Application_ID\")         \n    client_secret = os.getenv(\"Secret_Value\")       \n\n    # Authenticate using service principal credentials\n    credential = ClientSecretCredential(\n        tenant_id=tenant_id,\n        client_id=client_id,\n        client_secret=client_secret\n    )\n\n    web_client = WebSiteManagementClient(credential, subscription_id)\n\n    # Get current state\n    app = web_client.web_apps.get(resource_group, webapp_name)\n    state = app.state\n\n    if state.lower() == \"running\":\n        return f\"✅ Web app '{webapp_name}' is already running.\"\n\n    elif state.lower() == \"stopped\":\n        return f\"❌ Web app '{webapp_name}' is in stopped state.\"\n\n    else:\n        return f\"Web app '{webapp_name}' is in state: {state}.\"\n",
+                "name": "service_status_checker",
+                "description": "A simple calculator that performs basic arithmetic operations",
+                "global_imports": [],
+                "has_cancellation_support": false
+              }
+            }
+          ]
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "DB Agent - An agent that provides assistance with ability to use tools.",
+        "label": "DB Agent",
+        "config": {
+          "name": "DB_Agent",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for Azure OpenAI hosted models.",
+            "label": "AzureOpenAIChatCompletionClient",
+            "config": {
+              "model": "gpt-4o",
+              "api_key": "AkyvAi0aL0UZqKB7TfhYjIan9VVg5eZd0IzBeZuvXH3kayLmpkjAJQQJ99BGACYeBjFXJ3w3AAABACOGEh4t",
+              "api_type": "azure",
+              "api_version": "2024-12-01-preview",
+              "azure_endpoint": "https://azure-openai-east-us01.openai.azure.com/",
+              "deployment_id": "gpt-4o",
+              "temperature": 0.2,
+              "base_url": "https://azure-openai-east-us01.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview"
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "An agent that provides assistance with ability to use tools.",
+          "system_message": "You are the DB Agent.\n\nPurpose:\nMonitor MySQL Flexible Server status using the 'db_status_tool'.\n\nInput:\nThe tool returns the latest DB status with its version.\n\nInstructions:\n1. Run 'db_status_tool' to fetch the latest database status.\n2. Return the status in a short, factual sentence. \n3. Pass this status summary information forward to the RCA Agent for correlation with other metrics.\n\nOutput Rules:\n- Do not speculate or add explanations.\n- Only report the current state as returned by the tool.",
+          "model_client_stream": true,
+          "reflect_on_tool_use": true,
+          "tool_call_summary_format": "{result}",
+          "metadata": {},
+          "tools": [
+            {
+              "provider": "autogen_core.tools.FunctionTool",
+              "component_type": "tool",
+              "version": 1,
+              "component_version": 1,
+              "description": "A tool that fetches the latest DB logs from Azure App Insights.",
+              "label": "DB Status Tool",
+              "config": {
+                "source_code": "def db_status_tool():\n    import mysql.connector\n    from mysql.connector import Error\n    import os\n    from dotenv import load_dotenv\n    load_dotenv()\n    try:\n        cnx = mysql.connector.connect(\n            user=os.getenv(\"MYSQL_USER\"),   # include @server-name suffix\n            password=os.getenv(\"MYSQL_PASSWORD\"),\n            host=os.getenv(\"MYSQL_HOST\"),\n            port=3306,\n            database=\"bookings_db\",\n            ssl_ca=\"DigiCertGlobalRootG2.crt.pem\",  # file in same folder as .ipynb\n            ssl_disabled=False\n        )\n        if cnx.is_connected():\n            version = cnx.get_server_info()\n            cnx.close()\n            return f\"✅ MySQL Flexible Server is running. Version: {version}\"\n    except Error as e:\n        return f\"❌ Connection failed: {str(e)}\"\n",
+                "name": "db_status_tool",
+                "description": "A simple calculator that performs basic arithmetic operations",
+                "global_imports": [],
+                "has_cancellation_support": false
+              }
+            }
+          ]
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "RCA Agent - An agent that provides assistance with ability to use tools.",
+        "label": "RCA Agent",
+        "config": {
+          "name": "rca_agent",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for Azure OpenAI hosted models.",
+            "label": "AzureOpenAIChatCompletionClient",
+            "config": {
+              "model": "gpt-4o",
+              "api_key": "AkyvAi0aL0UZqKB7TfhYjIan9VVg5eZd0IzBeZuvXH3kayLmpkjAJQQJ99BGACYeBjFXJ3w3AAABACOGEh4t",
+              "api_type": "azure",
+              "api_version": "2024-12-01-preview",
+              "azure_endpoint": "https://azure-openai-east-us01.openai.azure.com/",
+              "deployment_id": "gpt-4o",
+              "temperature": 0.2,
+              "base_url": "https://azure-openai-east-us01.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview"
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "An agent that provides assistance with ability to use tools.",
+          "system_message": "You are the RCA (Root Cause Analysis) Agent.\n\nPurpose:\nCorrelate the error summary from the Logs Reading Agent, the app status from the App Service Agent, and the database status from the DB Logs Reading Agent, and provide a concise Root Cause Analysis.\n\nInstructions:\n1. Take the error summary provided by the Logs Reading Agent.\n2. Take the app status provided by the App Service Agent.\n3. Take the database status provided by the DB Logs Reading Agent.\n4. Combine these inputs into a clear Root Cause Analysis explaining:\n   - What the error is.\n   - How the current app service status relates to the error.\n   - Whether the database logs indicate a contributing or independent issue.\n5. Provide the Root Cause Analysis as the final output in 2 to 4 sentences. \n6. If any issue is identified:\n   - Instruct the Human Agent to confirm whether to fix the issue.\n   - After confirmation, the Resolver Agent should perform the fix.\n7. If no issues are identified in the RCA:\n   - Output exactly: TERMINATE\n\nOutput Rules:\n- Be concise, factual, and professional.\n- Do not include tool names or similarity scores.\n- Do not speculate beyond the provided error, app status, and database logs.",
+          "model_client_stream": true,
+          "reflect_on_tool_use": true,
+          "tool_call_summary_format": "{result}",
+          "metadata": {},
+          "tools": []
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.UserProxyAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "An agent that can represent a human user through an input function.",
+        "label": "UserProxyAgent",
+        "config": {
+          "name": "user_proxy",
+          "description": "a human user that should be consulted only when the assistant_agent is unable to verify the information provided by the websurfer_agent"
+        }
+      },
+      {
+        "provider": "autogen_agentchat.agents.AssistantAgent",
+        "component_type": "agent",
+        "version": 1,
+        "component_version": 1,
+        "description": "An agent that provides assistance with ability to use tools.",
+        "label": "ResolverAgent",
+        "config": {
+          "name": "resolver_agent",
+          "model_client": {
+            "provider": "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
+            "component_type": "model",
+            "version": 1,
+            "component_version": 1,
+            "description": "Chat completion client for Azure OpenAI hosted models.",
+            "label": "AzureOpenAIChatCompletionClient",
+            "config": {
+              "model": "gpt-4o",
+              "api_key": "AkyvAi0aL0UZqKB7TfhYjIan9VVg5eZd0IzBeZuvXH3kayLmpkjAJQQJ99BGACYeBjFXJ3w3AAABACOGEh4t",
+              "api_type": "azure",
+              "api_version": "2024-12-01-preview",
+              "azure_endpoint": "https://azure-openai-east-us01.openai.azure.com/",
+              "deployment_id": "gpt-4o",
+              "temperature": 0.2,
+              "base_url": "https://azure-openai-east-us01.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview"
+            }
+          },
+          "model_context": {
+            "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+            "component_type": "chat_completion_context",
+            "version": 1,
+            "component_version": 1,
+            "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+            "label": "UnboundedChatCompletionContext",
+            "config": {}
+          },
+          "description": "An agent that provides assistance with ability to use tools.",
+          "system_message": "You are a proactive and helpful Resolver Agent.\n\nPurpose:\nAct only after receiving explicit confirmation from the Human Agent. Based on the RCA, choose the appropriate tool to fix the identified issue.\n\nInstructions:\n1. Wait for confirmation from the Human Agent to proceed with remediation.\n2. Read the RCA and determine the primary cause:\n   - If the issue is due to the web application being stopped or not running, use the start_web_app_if_stopped tool.\n   - If the issue is due to the MySQL Flexible Server being stopped or unreachable, use the start_mysql_server tool.\n3. Execute only the tool(s) relevant to the RCA. Do not run tools that are unrelated to the identified cause.\n4. After a successful action:\n   - If the web app was started, respond exactly:\n     \"The web app has been started successfully. Kindly check your application URL now.\"\n   - If the MySQL server was started, respond exactly:\n     \"The MySQL Flexible Server has been started successfully. Kindly check your application once!\"\n5. If the tool execution indicates the service is already running, return a short factual message stating it is already running and no action was needed.\n6. If a tool returns an error, provide a brief, factual status and stop further actions.\n7. Once all necessary actions are completed, conclude the session by saying:\n\"TERMINATE\"\n\nOutput rules:\n- Be concise, factual, and professional.\n- Do not speculate or include tool internals, logs, or similarity scores.\n- Perform only the minimum necessary actions to resolve the identified issue.\n\nTools:\n- start_web_app_if_stopped\n- start_mysql_server",
+          "model_client_stream": true,
+          "reflect_on_tool_use": true,
+          "tool_call_summary_format": "{result}",
+          "metadata": {},
+          "tools": [
+            {
+              "provider": "autogen_core.tools.FunctionTool",
+              "component_type": "tool",
+              "version": 1,
+              "component_version": 1,
+              "description": "A tool that starts the app service if in stopped state.",
+              "label": "Error Resolver Tool",
+              "config": {
+                "source_code": "def start_web_app_if_stopped():\n    from azure.identity import ClientSecretCredential\n    from azure.mgmt.web import WebSiteManagementClient\n    import time\n    import os\n    from dotenv import load_dotenv\n\n    load_dotenv()\n    poll_interval=5\n    timeout=120\n    \"\"\"\n    Starts an Azure Web App if it is stopped, and waits until it is confirmed running.\n    \"\"\"\n\n    # Load values from .env\n    subscription_id = os.getenv(\"SUBSCRIPTION_ID\")\n    resource_group = os.getenv(\"RESOURCE_GROUP\")\n    webapp_name = os.getenv(\"WEBAPP_NAME\")\n    tenant_id = os.getenv(\"TENANT_ID\")              # You must add this to your .env\n    client_id = os.getenv(\"Application_ID\")         # Application (client) ID from App Registration\n    client_secret = os.getenv(\"Secret_Value\")       # Client secret value from App Registration\n\n    # Authenticate using service principal credentials\n    credential = ClientSecretCredential(\n        tenant_id=tenant_id,\n        client_id=client_id,\n        client_secret=client_secret\n    )\n\n    web_client = WebSiteManagementClient(credential, subscription_id)\n\n    # Get current state\n    app = web_client.web_apps.get(resource_group, webapp_name)\n    state = app.state\n\n    if state.lower() == \"running\":\n        return f\"✅ Web app '{webapp_name}' is already running.\"\n\n    elif state.lower() == \"stopped\":\n        print(f\"Web app '{webapp_name}' is stopped. Starting now...\")\n        web_client.web_apps.start(resource_group, webapp_name)\n\n        # Wait until running or timeout\n        elapsed = 0\n        while elapsed < timeout:\n            time.sleep(poll_interval)\n            elapsed += poll_interval\n            app = web_client.web_apps.get(resource_group, webapp_name)\n            print(f\"⏳ Checking status... Current state: {app.state}\")\n            if app.state.lower() == \"running\":\n                return f\"🚀 Web app '{webapp_name}' started successfully in {elapsed} seconds.\"\n\n        return f\"⚠️ Timed out after {timeout} seconds waiting for '{webapp_name}' to start.\"\n\n    else:\n        return f\"Web app '{webapp_name}' is in state: {state}.\"\n",
+                "name": "start_web_app_if_stopped",
+                "description": "A simple calculator that performs basic arithmetic operations",
+                "global_imports": [],
+                "has_cancellation_support": false
+              }
+            },
+            {
+              "provider": "autogen_core.tools.FunctionTool",
+              "component_type": "tool",
+              "version": 1,
+              "component_version": 1,
+              "description": "A tool that starts the MySQL server if its in stopped state.",
+              "label": "Start MySql Server",
+              "config": {
+                "source_code": "def start_mysql_server():\n    from azure.identity import ClientSecretCredential\n    from azure.mgmt.rdbms.mysql_flexibleservers import MySQLManagementClient\n    import os\n    from dotenv import load_dotenv\n    load_dotenv()\n    \n    credential = ClientSecretCredential(\n        tenant_id=os.getenv(\"TENANT_ID\"),\n        client_id=os.getenv(\"Application_ID\"),\n        client_secret=os.getenv(\"Secret_Value\")\n    )\n\n    subscription_id = os.getenv(\"SUBSCRIPTION_ID\")\n    resource_group = os.getenv(\"RESOURCE_GROUP\")\n    server_name = os.getenv(\"MYSQL_SERVER\")  # just the server name, e.g. \"mysql-db\"\n\n    client = MySQLManagementClient(credential, subscription_id)\n\n    # Get current server state\n    server = client.servers.get(resource_group, server_name)\n    current_state = server.state.lower()   # <-- FIXED: use .state instead of .user_visible_state\n\n    if current_state == \"stopped\":\n        poller = client.servers.begin_start(resource_group, server_name)\n        poller.result()  # wait until start completes\n        return f\"🚀 MySQL Flexible Server '{server_name}' was stopped and has now been started successfully.\"\n    elif current_state == \"ready\":\n        return f\"✅ MySQL Flexible Server '{server_name}' is already running.\"\n    else:\n        return f\"⚠️ MySQL Flexible Server '{server_name}' is in state: {server.state}. Manual check may be required.\"\n",
+                "name": "start_mysql_server",
+                "description": "A simple calculator that performs basic arithmetic operations",
+                "global_imports": [],
+                "has_cancellation_support": false
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "termination_condition": {
+      "provider": "autogen_agentchat.base.OrTerminationCondition",
+      "component_type": "termination",
+      "version": 1,
+      "component_version": 1,
+      "label": "OrTerminationCondition",
+      "config": {
+        "conditions": [
+          {
+            "provider": "autogen_agentchat.conditions.TextMentionTermination",
+            "component_type": "termination",
+            "version": 1,
+            "component_version": 1,
+            "description": "Terminate the conversation if a specific text is mentioned.",
+            "label": "TextMentionTermination",
+            "config": {
+              "text": "TERMINATE"
+            }
+          },
+          {
+            "provider": "autogen_agentchat.conditions.MaxMessageTermination",
+            "component_type": "termination",
+            "version": 1,
+            "component_version": 1,
+            "description": "Terminate the conversation after a maximum number of messages have been exchanged.",
+            "label": "MaxMessageTermination",
+            "config": {
+              "max_messages": 10,
+              "include_agent_event": false
+            }
+          }
+        ]
+      }
+    },
+    "emit_team_events": false
+  }
+}
